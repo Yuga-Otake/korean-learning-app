@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { QuizQuestion, QuizType } from '../types';
+import HangulTable from './HangulTable';
 
 interface QuizProps {
   questions: QuizQuestion[];
@@ -15,6 +16,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [reviewQuestionIndex, setReviewQuestionIndex] = useState(0);
   const [allCompleted, setAllCompleted] = useState(false);
+  const [showHangulTable, setShowHangulTable] = useState(true);
 
   // 現在表示する問題を決定
   const currentQuestion = isReviewMode 
@@ -69,6 +71,10 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
     }
   };
 
+  const toggleHangulTable = () => {
+    setShowHangulTable(prev => !prev);
+  };
+
   if (!currentQuestion) {
     return <div>問題がありません</div>;
   }
@@ -82,6 +88,16 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
     ? `復習: ${reviewQuestionIndex + 1}/${incorrectQuestions.length}` 
     : `質問: ${currentQuestionIndex + 1}/${totalQuestions}`;
 
+  // 問題文の生成
+  let questionText = '';
+  if (currentQuestion.questionType === QuizType.MEANING) {
+    // 意味クイズ: 「韓国語（読み方）」の形式で表示
+    questionText = `${currentQuestion.question} (${currentWordInfo.pronunciation})`;
+  } else {
+    // 読み方クイズ: 「韓国語（意味）」の形式で表示
+    questionText = `${currentQuestion.question} (${currentWordInfo.japanese})`;
+  }
+
   return (
     <div className="quiz-container">
       <div className="quiz-progress">
@@ -94,7 +110,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
       </div>
       
       <div className="question">
-        <h2>{currentQuestion.question}</h2>
+        <h2>{questionText}</h2>
       </div>
       
       <div className="options">
@@ -150,6 +166,14 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
           </button>
         </div>
       )}
+
+      {/* ハングル表の表示/非表示を切り替えるボタン */}
+      <button onClick={toggleHangulTable} className="hangul-table-toggle">
+        {showHangulTable ? 'ハングル音表を隠す' : 'ハングル音表を表示'}
+      </button>
+
+      {/* ハングル音表 */}
+      {showHangulTable && <HangulTable />}
     </div>
   );
 };

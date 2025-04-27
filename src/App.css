@@ -238,3 +238,71 @@ main {
   font-weight: bold;
   margin-left: 10px;
 }
+
+/* ハングル音表のスタイル */
+.hangul-table-container {
+  margin: 30px 0;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border-top: 4px solid #2979ff;
+}
+
+.hangul-table-title {
+  font-size: 1.3rem;
+  color: #2979ff;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.hangul-section {
+  margin-bottom: 20px;
+}
+
+.hangul-section h4 {
+  font-size: 1.1rem;
+  color: #555;
+  margin: 10px 0;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #ddd;
+}
+
+.hangul-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+.hangul-table th {
+  background-color: #e3f2fd;
+  padding: 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.hangul-table td {
+  padding: 6px 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.hangul-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+/* トグルボタン */
+.hangul-table-toggle {
+  display: block;
+  margin: 20px auto;
+  padding: 8px 15px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.hangul-table-toggle:hover {
+  background-color: #e3e3e3;
+}
