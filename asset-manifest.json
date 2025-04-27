@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/korean-learning-app/static/css/main.3490525a.css",
-    "main.js": "/korean-learning-app/static/js/main.3c22d196.js",
+    "main.js": "/korean-learning-app/static/js/main.63d04332.js",
     "static/js/453.5a8a3af0.chunk.js": "/korean-learning-app/static/js/453.5a8a3af0.chunk.js",
     "index.html": "/korean-learning-app/index.html",
     "main.3490525a.css.map": "/korean-learning-app/static/css/main.3490525a.css.map",
-    "main.3c22d196.js.map": "/korean-learning-app/static/js/main.3c22d196.js.map",
+    "main.63d04332.js.map": "/korean-learning-app/static/js/main.63d04332.js.map",
     "453.5a8a3af0.chunk.js.map": "/korean-learning-app/static/js/453.5a8a3af0.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.3490525a.css",
-    "static/js/main.3c22d196.js"
+    "static/js/main.63d04332.js"
   ]
 }
