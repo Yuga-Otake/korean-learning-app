@@ -571,3 +571,18 @@ main {
   width: 18px;
   height: 18px;
 }
+
+/* 発音クイズのハングル部位の説明 */
+.hangul-explanation {
+  padding: 15px;
+  background-color: #e8f5e9;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.hangul-character {
+  font-size: 3rem;
+  margin-bottom: 10px;
+  color: #2979ff;
+  font-weight: bold;
+}

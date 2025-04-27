@@ -1,5 +1,5 @@
 import React from 'react';
-import { CategoryProgress, LevelProgress, UserProgress } from '../types';
+import { CategoryProgress, LevelProgress, UserProgress, QuizType } from '../types';
 import ProgressBar from './ProgressBar';
 import { calculateOverallProgress } from '../services/progressService';
 
@@ -27,6 +27,11 @@ const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ progress }) => {
       return (levelOrder[a.level] || 99) - (levelOrder[b.level] || 99);
     });
   
+  // クイズタイプごとの進捗
+  const quizTypesProgress = progress.quizTypesProgress 
+    ? Object.values(progress.quizTypesProgress).filter(qt => qt && qt.quizType)
+    : [];
+  
   // 日付フォーマット
   const formatDate = (isoString: string) => {
     try {
@@ -51,6 +56,21 @@ const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ progress }) => {
         />
         <div className="last-updated">
           最終更新: {formatDate(progress.lastUpdated)}
+        </div>
+      </div>
+      
+      <div className="progress-section">
+        <h3>クイズタイプ別進捗</h3>
+        <div className="progress-grid">
+          {quizTypesProgress.map(quizTypeProgress => (
+            <div className="progress-item" key={quizTypeProgress.quizType}>
+              <ProgressBar 
+                percentage={quizTypeProgress.progressPercentage} 
+                label={`${quizTypeProgress.quizType} (${quizTypeProgress.correctAnswers}/${quizTypeProgress.totalQuestions}問)`}
+                color={getQuizTypeColor(quizTypeProgress.quizType)}
+              />
+            </div>
+          ))}
         </div>
       </div>
       
@@ -85,6 +105,16 @@ const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ progress }) => {
       </div>
     </div>
   );
+};
+
+// クイズタイプに応じた色を返す関数
+const getQuizTypeColor = (quizType: QuizType): string => {
+  switch (quizType) {
+    case QuizType.MEANING: return '#e91e63'; // ピンク
+    case QuizType.READING: return '#2979ff'; // 青
+    case QuizType.PRONUNCIATION: return '#9c27b0'; // 紫
+    default: return '#2979ff'; // 青
+  }
 };
 
 // レベルに応じた色を返す関数

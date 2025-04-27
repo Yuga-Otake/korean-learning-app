@@ -1,4 +1,4 @@
-import { KoreanWord, CategoryProgress, LevelProgress, UserProgress, WordStat } from '../types';
+import { KoreanWord, CategoryProgress, LevelProgress, UserProgress, WordStat, QuizType, QuizTypeProgress } from '../types';
 
 const PROGRESS_KEY = 'korean_learning_progress';
 
@@ -46,6 +46,17 @@ export const initializeProgress = (vocabulary: KoreanWord[]): UserProgress => {
     };
   });
   
+  // クイズタイプごとの進捗オブジェクトを作成
+  const quizTypesProgress: Record<string, QuizTypeProgress> = {};
+  Object.values(QuizType).forEach(quizType => {
+    quizTypesProgress[quizType] = {
+      quizType,
+      totalQuestions: 0,
+      correctAnswers: 0,
+      progressPercentage: 0
+    };
+  });
+  
   // 単語ごとの統計情報を初期化
   const wordStats: Record<string, WordStat> = {};
   vocabulary.forEach(word => {
@@ -58,6 +69,7 @@ export const initializeProgress = (vocabulary: KoreanWord[]): UserProgress => {
   const progress: UserProgress = {
     categories: categoryProgress,
     levels: levelProgress,
+    quizTypesProgress: quizTypesProgress,
     wordStats: wordStats,
     lastUpdated: new Date().toISOString()
   };
@@ -143,6 +155,20 @@ export const updateProgressWithVocabulary = (progress: UserProgress, vocabulary:
     }
   });
   
+  // クイズタイプごとの進捗オブジェクトがない場合は初期化
+  if (!progress.quizTypesProgress) {
+    progress.quizTypesProgress = {};
+    Object.values(QuizType).forEach(quizType => {
+      progress.quizTypesProgress[quizType] = {
+        quizType,
+        totalQuestions: 0,
+        correctAnswers: 0,
+        progressPercentage: 0
+      };
+    });
+    console.log('クイズタイプごとの進捗オブジェクトを初期化しました');
+  }
+  
   // 単語の統計情報を更新
   vocabulary.forEach(word => {
     if (!progress.wordStats[word.korean]) {
@@ -179,6 +205,23 @@ export const loadProgress = (): UserProgress | null => {
       
       // カテゴリごとの単語を取得するためにvocabularyをロードする必要があるが、
       // 非同期関数内で行うことができないため、空のオブジェクトで初期化するだけにする
+      
+      // 変換したデータを保存
+      saveProgress(progress);
+    }
+    
+    // クイズタイプごとの進捗オブジェクトがない場合は初期化
+    if (!progress.quizTypesProgress) {
+      progress.quizTypesProgress = {};
+      Object.values(QuizType).forEach(quizType => {
+        progress.quizTypesProgress[quizType] = {
+          quizType,
+          totalQuestions: 0,
+          correctAnswers: 0,
+          progressPercentage: 0
+        };
+      });
+      console.log('クイズタイプごとの進捗オブジェクトを初期化しました');
       
       // 変換したデータを保存
       saveProgress(progress);
@@ -308,4 +351,72 @@ export const getFrequentlyMistaken = (progress: UserProgress, minMistakes: numbe
     console.error('よく間違える単語の取得中にエラーが発生しました:', error);
     return [];
   }
+};
+
+// クイズの回答を記録する
+export const recordQuizAnswer = (quizType: QuizType, isCorrect: boolean, word?: KoreanWord): UserProgress => {
+  let progress = loadProgress();
+  if (!progress) {
+    throw new Error('進捗データが見つかりません');
+  }
+  
+  // クイズタイプごとの進捗を更新
+  if (progress.quizTypesProgress && progress.quizTypesProgress[quizType]) {
+    const quizTypeData = progress.quizTypesProgress[quizType];
+    quizTypeData.totalQuestions += 1;
+    
+    if (isCorrect) {
+      quizTypeData.correctAnswers += 1;
+    }
+    
+    quizTypeData.progressPercentage = Math.round(
+      (quizTypeData.correctAnswers / quizTypeData.totalQuestions) * 100
+    );
+  }
+  
+  // 単語がある場合は、単語の学習進捗も更新
+  if (word && isCorrect) {
+    // 既存の関数を呼び出して単語の学習進捗を更新
+    // ※ここでは戻り値は使わずに直接progressを更新する
+    const { category, level } = word;
+    
+    // カテゴリの進捗を更新
+    if (progress.categories[category]) {
+      const categoryData = progress.categories[category];
+      if (categoryData.correctWords < categoryData.totalWords) {
+        categoryData.correctWords += 1;
+        categoryData.progressPercentage = Math.round(
+          (categoryData.correctWords / categoryData.totalWords) * 100
+        );
+      }
+    }
+    
+    // レベルの進捗を更新
+    if (progress.levels[level]) {
+      const levelData = progress.levels[level];
+      if (levelData.correctWords < levelData.totalWords) {
+        levelData.correctWords += 1;
+        levelData.progressPercentage = Math.round(
+          (levelData.correctWords / levelData.totalWords) * 100
+        );
+      }
+    }
+  } else if (word && !isCorrect) {
+    // 間違えた場合は、間違い回数を記録
+    const { korean } = word;
+    
+    if (progress.wordStats[korean]) {
+      progress.wordStats[korean].incorrectCount += 1;
+    } else {
+      progress.wordStats[korean] = {
+        korean,
+        incorrectCount: 1
+      };
+    }
+  }
+  
+  progress.lastUpdated = new Date().toISOString();
+  saveProgress(progress);
+  
+  return progress;
 }; 

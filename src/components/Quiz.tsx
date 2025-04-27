@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { QuizQuestion, QuizType } from '../types';
 import HangulTable from './HangulTable';
-import { recordWordMistake, resetWordMistakeCount } from '../services/progressService';
+import { recordWordMistake, resetWordMistakeCount, recordQuizAnswer } from '../services/progressService';
 
 interface QuizProps {
   questions: QuizQuestion[];
@@ -39,10 +39,21 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
       if (isReviewMode && currentQuestion.word) {
         resetWordMistakeCount(currentQuestion.word);
       }
+      
+      // クイズタイプごとの進捗を記録
+      if (currentQuestion.word) {
+        recordQuizAnswer(currentQuestion.questionType, true, currentQuestion.word);
+      } else {
+        recordQuizAnswer(currentQuestion.questionType, true);
+      }
     } else {
       // 間違えた場合、間違い回数を記録
       if (currentQuestion.word) {
         recordWordMistake(currentQuestion.word);
+        // クイズタイプごとの進捗も記録
+        recordQuizAnswer(currentQuestion.questionType, false, currentQuestion.word);
+      } else {
+        recordQuizAnswer(currentQuestion.questionType, false);
       }
       
       if (!isReviewMode) {

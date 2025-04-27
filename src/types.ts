@@ -39,6 +39,13 @@ export interface LevelProgress {
   progressPercentage: number;
 }
 
+export interface QuizTypeProgress {
+  quizType: QuizType;
+  totalQuestions: number;
+  correctAnswers: number;
+  progressPercentage: number;
+}
+
 export interface WordStat {
   korean: string;
   incorrectCount: number;
@@ -47,6 +54,7 @@ export interface WordStat {
 export interface UserProgress {
   categories: Record<string, CategoryProgress>;
   levels: Record<string, LevelProgress>;
+  quizTypesProgress: Record<string, QuizTypeProgress>;
   wordStats: Record<string, WordStat>;
   lastUpdated: string;
 }
