@@ -106,9 +106,12 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
   if (currentQuestion.questionType === QuizType.MEANING) {
     // 意味クイズ: 「韓国語（読み方）」の形式で表示
     questionText = `${currentQuestion.question} (${currentWordInfo.pronunciation})`;
-  } else {
+  } else if (currentQuestion.questionType === QuizType.READING) {
     // 読み方クイズ: 「韓国語（意味）」の形式で表示
     questionText = `${currentQuestion.question} (${currentWordInfo.japanese})`;
+  } else if (currentQuestion.questionType === QuizType.PRONUNCIATION) {
+    // 発音クイズ: ハングル部位をそのまま表示
+    questionText = `${currentQuestion.question}`;
   }
 
   return (
@@ -155,20 +158,27 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
 
           {/* 追加情報の表示 */}
           <div className="additional-info">
-            <div className="word-details">
-              <div className="korean-word">{currentWordInfo.word?.korean || currentQuestion.question}</div>
-              
-              {/* 意味と読み方を表示 */}
-              <div className="word-pronunciation">
-                <span className="label">読み方: </span>
-                <span>{currentWordInfo.word?.pronunciation || currentWordInfo.pronunciation}</span>
+            {currentQuestion.questionType === QuizType.PRONUNCIATION ? (
+              <div className="hangul-explanation">
+                <div className="hangul-character">「{currentQuestion.question}」</div>
+                <div>この文字の発音は「{currentQuestion.correctAnswer}」です。</div>
               </div>
-              
-              <div className="word-meaning">
-                <span className="label">意味: </span>
-                <span>{currentWordInfo.word?.japanese || currentWordInfo.japanese}</span>
+            ) : (
+              <div className="word-details">
+                <div className="korean-word">{currentWordInfo.word?.korean || currentQuestion.question}</div>
+                
+                {/* 意味と読み方を表示 */}
+                <div className="word-pronunciation">
+                  <span className="label">読み方: </span>
+                  <span>{currentWordInfo.word?.pronunciation || currentWordInfo.pronunciation}</span>
+                </div>
+                
+                <div className="word-meaning">
+                  <span className="label">意味: </span>
+                  <span>{currentWordInfo.word?.japanese || currentWordInfo.japanese}</span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <button onClick={handleNextQuestion} className="next-button">
