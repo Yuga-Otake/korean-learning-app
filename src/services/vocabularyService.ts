@@ -55,7 +55,12 @@ export const generateQuiz = (
       question,
       options,
       correctAnswer,
-      questionType: quizType
+      questionType: quizType,
+      // 単語の完全な情報を含める
+      word: word,
+      korean: word.korean,
+      japanese: word.japanese,
+      pronunciation: word.pronunciation
     };
   });
 }; 

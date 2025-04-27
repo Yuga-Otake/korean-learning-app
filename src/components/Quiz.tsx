@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QuizQuestion } from '../types';
+import { QuizQuestion, QuizType } from '../types';
 
 interface QuizProps {
   questions: QuizQuestion[];
@@ -39,6 +39,9 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
   if (!currentQuestion) {
     return <div>問題がありません</div>;
   }
+
+  // 現在の問題の完全な情報を取得
+  const currentWordInfo = currentQuestion as any;
 
   return (
     <div className="quiz-container">
@@ -80,6 +83,25 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
           {selectedAnswer === currentQuestion.correctAnswer 
             ? '正解です！' 
             : `不正解です。正解は「${currentQuestion.correctAnswer}」です。`}
+
+          {/* 追加情報の表示 */}
+          <div className="additional-info">
+            <div className="word-details">
+              <div className="korean-word">{currentWordInfo.word?.korean || currentQuestion.question}</div>
+              
+              {/* 意味と読み方を表示 */}
+              <div className="word-pronunciation">
+                <span className="label">読み方: </span>
+                <span>{currentWordInfo.word?.pronunciation || currentWordInfo.pronunciation}</span>
+              </div>
+              
+              <div className="word-meaning">
+                <span className="label">意味: </span>
+                <span>{currentWordInfo.word?.japanese || currentWordInfo.japanese}</span>
+              </div>
+            </div>
+          </div>
+
           <button onClick={handleNextQuestion} className="next-button">
             {currentQuestionIndex < questions.length - 1 ? '次の質問' : '結果を見る'}
           </button>

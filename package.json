@@ -2,7 +2,7 @@
   "name": "korean-learning-app",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://username.github.io/korean-learning-app",
+  "homepage": "https://yuga-otake.github.io/korean-learning-app",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
