@@ -1,5 +1,10 @@
+/* アプリ全体のスタイル */
 .App {
   text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Noto Sans JP', 'Noto Sans KR', sans-serif;
 }
 
 .App-logo {
@@ -14,18 +19,169 @@
 }
 
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+  background-color: #2979ff;
+  padding: 20px;
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+main {
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* メニュー画面 */
+.menu {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: 20px;
 }
 
-.App-link {
-  color: #61dafb;
+.menu button {
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  width: 200px;
+}
+
+.menu button:hover {
+  background-color: #388e3c;
+}
+
+/* クイズコンテナ */
+.quiz-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.quiz-progress {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.quiz-type {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #2979ff;
+  margin-bottom: 10px;
+}
+
+.question h2 {
+  font-size: 2.5rem;
+  margin: 20px 0;
+  color: #333;
+}
+
+/* 選択肢ボタン */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.option-button {
+  padding: 15px;
+  font-size: 1.1rem;
+  background-color: #f0f0f0;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.option-button:hover:not(:disabled) {
+  background-color: #e3f2fd;
+  border-color: #2979ff;
+}
+
+.option-button.correct {
+  background-color: #c8e6c9;
+  border-color: #4caf50;
+}
+
+.option-button.incorrect {
+  background-color: #ffcdd2;
+  border-color: #f44336;
+}
+
+/* フィードバック */
+.feedback {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #e8eaf6;
+  border-radius: 8px;
+  font-size: 1.1rem;
+}
+
+.next-button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background-color: #2979ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.next-button:hover {
+  background-color: #1565c0;
+}
+
+/* 結果画面 */
+.results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.results p {
+  font-size: 1.5rem;
+  margin: 20px 0;
+}
+
+.results button {
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  background-color: #2979ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.results button:hover {
+  background-color: #1565c0;
+}
+
+/* 読み込み中とエラー */
+.loading, .error {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.2rem;
+}
+
+.error {
+  color: #f44336;
 }
 
 @keyframes App-logo-spin {
