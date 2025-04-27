@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { KoreanWord, QuizQuestion, QuizType } from '../types';
+import { KoreanWord, QuizQuestion, QuizType, StudyFilter } from '../types';
 
 export const loadVocabulary = async (): Promise<KoreanWord[]> => {
   const response = await fetch('./korean_vocabulary.csv');
@@ -11,6 +11,47 @@ export const loadVocabulary = async (): Promise<KoreanWord[]> => {
   });
   
   return result.data as KoreanWord[];
+};
+
+// 利用可能なすべてのカテゴリを取得
+export const getAvailableCategories = (vocabulary: KoreanWord[]): string[] => {
+  const categories = new Set<string>();
+  vocabulary.forEach(word => categories.add(word.category));
+  return Array.from(categories).sort();
+};
+
+// 利用可能なすべてのレベルを取得
+export const getAvailableLevels = (vocabulary: KoreanWord[]): string[] => {
+  const levels = new Set<string>();
+  vocabulary.forEach(word => levels.add(word.level));
+  
+  // 優先順にソート（初級、中級、上級など）
+  const levelOrder: Record<string, number> = {
+    '初級': 1,
+    '中級': 2,
+    '上級': 3
+  };
+  
+  return Array.from(levels).sort((a, b) => {
+    return (levelOrder[a] || 99) - (levelOrder[b] || 99);
+  });
+};
+
+// フィルターに基づいて単語をフィルタリング
+export const filterVocabulary = (
+  vocabulary: KoreanWord[],
+  filter: StudyFilter
+): KoreanWord[] => {
+  // フィルターが空の場合は全てを返す
+  if (filter.categories.length === 0 && filter.levels.length === 0) {
+    return vocabulary;
+  }
+  
+  return vocabulary.filter(word => {
+    const categoryMatch = filter.categories.length === 0 || filter.categories.includes(word.category);
+    const levelMatch = filter.levels.length === 0 || filter.levels.includes(word.level);
+    return categoryMatch && levelMatch;
+  });
 };
 
 export const generateQuiz = (
@@ -60,7 +101,9 @@ export const generateQuiz = (
       word: word,
       korean: word.korean,
       japanese: word.japanese,
-      pronunciation: word.pronunciation
+      pronunciation: word.pronunciation,
+      category: word.category,
+      level: word.level
     };
   });
 }; 
