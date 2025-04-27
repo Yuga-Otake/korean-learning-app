@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import { KoreanWord, QuizQuestion, QuizType, StudyFilter } from '../types';
+import { getFrequentlyMistaken } from './progressService';
 
 export const loadVocabulary = async (): Promise<KoreanWord[]> => {
   const response = await fetch('./korean_vocabulary.csv');
@@ -13,17 +14,19 @@ export const loadVocabulary = async (): Promise<KoreanWord[]> => {
   return result.data as KoreanWord[];
 };
 
+// 重複を排除するユーティリティ関数
+const getUniqueValues = (array: string[]): string[] => {
+  return array.filter((value, index, self) => self.indexOf(value) === index);
+};
+
 // 利用可能なすべてのカテゴリを取得
 export const getAvailableCategories = (vocabulary: KoreanWord[]): string[] => {
-  const categories = new Set<string>();
-  vocabulary.forEach(word => categories.add(word.category));
-  return Array.from(categories).sort();
+  return getUniqueValues(vocabulary.map(word => word.category)).sort();
 };
 
 // 利用可能なすべてのレベルを取得
 export const getAvailableLevels = (vocabulary: KoreanWord[]): string[] => {
-  const levels = new Set<string>();
-  vocabulary.forEach(word => levels.add(word.level));
+  const levels = getUniqueValues(vocabulary.map(word => word.level));
   
   // 優先順にソート（初級、中級、上級など）
   const levelOrder: Record<string, number> = {
@@ -32,7 +35,7 @@ export const getAvailableLevels = (vocabulary: KoreanWord[]): string[] => {
     '上級': 3
   };
   
-  return Array.from(levels).sort((a, b) => {
+  return levels.sort((a, b) => {
     return (levelOrder[a] || 99) - (levelOrder[b] || 99);
   });
 };
@@ -40,17 +43,68 @@ export const getAvailableLevels = (vocabulary: KoreanWord[]): string[] => {
 // フィルターに基づいて単語をフィルタリング
 export const filterVocabulary = (
   vocabulary: KoreanWord[],
-  filter: StudyFilter
+  filter: StudyFilter,
+  mistakenWords: string[] = []
 ): KoreanWord[] => {
   // フィルターが空の場合は全てを返す
-  if (filter.categories.length === 0 && filter.levels.length === 0) {
+  if (filter.categories.length === 0 && 
+      filter.levels.length === 0 && 
+      !filter.showMistakesOnly) {
     return vocabulary;
   }
   
   return vocabulary.filter(word => {
     const categoryMatch = filter.categories.length === 0 || filter.categories.includes(word.category);
     const levelMatch = filter.levels.length === 0 || filter.levels.includes(word.level);
+    
+    // 間違えた問題のみを表示するフィルターが有効な場合
+    if (filter.showMistakesOnly) {
+      return mistakenWords.includes(word.korean) && categoryMatch && levelMatch;
+    }
+    
     return categoryMatch && levelMatch;
+  });
+};
+
+// 発音クイズの生成
+export const generatePronunciationQuiz = (
+  vocabulary: KoreanWord[],
+  questionCount: number = 5
+): QuizQuestion[] => {
+  if (vocabulary.length < 4) {
+    throw new Error('単語リストが短すぎます。少なくとも4単語が必要です。');
+  }
+
+  // 利用可能な単語からランダムに問題の数だけ選択
+  const shuffledVocab = [...vocabulary].sort(() => 0.5 - Math.random());
+  const selectedWords = shuffledVocab.slice(0, questionCount);
+  
+  return selectedWords.map(word => {
+    // 単語の発音の一部を表示し、残りの部分を選ばせる形式
+    const question = word.korean;
+    const correctAnswer = word.pronunciation;
+    
+    // 他の選択肢（発音）を取得
+    const otherOptions = shuffledVocab
+      .filter(w => w !== word && w.pronunciation !== word.pronunciation)
+      .slice(0, 3)
+      .map(w => w.pronunciation);
+    
+    // 選択肢をランダムに並べ替え
+    const options = [correctAnswer, ...otherOptions].sort(() => 0.5 - Math.random());
+    
+    return {
+      question,
+      options,
+      correctAnswer,
+      questionType: QuizType.PRONUNCIATION,
+      word: word,
+      korean: word.korean,
+      japanese: word.japanese,
+      pronunciation: word.pronunciation,
+      category: word.category,
+      level: word.level
+    };
   });
 };
 
@@ -61,6 +115,11 @@ export const generateQuiz = (
 ): QuizQuestion[] => {
   if (vocabulary.length < 4) {
     throw new Error('単語リストが短すぎます。少なくとも4単語が必要です。');
+  }
+
+  // 発音クイズの場合は別の関数を使用
+  if (quizType === QuizType.PRONUNCIATION) {
+    return generatePronunciationQuiz(vocabulary, questionCount);
   }
 
   // 利用可能な単語からランダムに問題の数だけ選択

@@ -532,3 +532,42 @@ main {
   font-size: 0.9rem;
   color: #2e7d32;
 }
+
+.quiz-button.pronunciation {
+  background-color: #9c27b0;
+}
+
+.quiz-button.pronunciation:hover {
+  background-color: #7b1fa2;
+}
+
+/* 発音クイズの強調表示 */
+.quiz-type-pronunciation {
+  background-color: #9c27b0;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+/* 間違えた問題フィルターのスタイル */
+.mistakes-filter {
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #fff3e0;
+  border-left: 4px solid #ff9800;
+  border-radius: 4px;
+}
+
+.mistakes-filter label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: bold;
+}
+
+.mistakes-filter input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}

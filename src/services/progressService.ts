@@ -1,12 +1,26 @@
-import { KoreanWord, CategoryProgress, LevelProgress, UserProgress } from '../types';
+import { KoreanWord, CategoryProgress, LevelProgress, UserProgress, WordStat } from '../types';
 
 const PROGRESS_KEY = 'korean_learning_progress';
 
 // 初期の進捗データを作成する
 export const initializeProgress = (vocabulary: KoreanWord[]): UserProgress => {
-  // すべてのカテゴリとレベルを抽出
-  const categories = [...new Set(vocabulary.map(word => word.category))];
-  const levels = [...new Set(vocabulary.map(word => word.level))];
+  // すべてのカテゴリとレベルを抽出（Setを使わずに配列で重複を除去）
+  const getUniqueValues = (array: string[]): string[] => {
+    return array.filter((value, index, self) => self.indexOf(value) === index);
+  };
+  
+  const categories = getUniqueValues(vocabulary.map(word => word.category)).sort();
+  const levels = getUniqueValues(vocabulary.map(word => word.level));
+  
+  // レベルの順序を定義
+  const levelOrder: Record<string, number> = {
+    '初級': 1,
+    '中級': 2,
+    '上級': 3
+  };
+  
+  // レベルをソート
+  levels.sort((a, b) => (levelOrder[a] || 99) - (levelOrder[b] || 99));
   
   // カテゴリごとの進捗オブジェクトを作成
   const categoryProgress: Record<string, CategoryProgress> = {};
@@ -32,9 +46,19 @@ export const initializeProgress = (vocabulary: KoreanWord[]): UserProgress => {
     };
   });
   
+  // 単語ごとの統計情報を初期化
+  const wordStats: Record<string, WordStat> = {};
+  vocabulary.forEach(word => {
+    wordStats[word.korean] = {
+      korean: word.korean,
+      incorrectCount: 0
+    };
+  });
+  
   const progress: UserProgress = {
     categories: categoryProgress,
     levels: levelProgress,
+    wordStats: wordStats,
     lastUpdated: new Date().toISOString()
   };
   
@@ -99,6 +123,51 @@ export const recordWordLearned = (word: KoreanWord): UserProgress => {
   return progress;
 };
 
+// 単語の間違いを記録
+export const recordWordMistake = (word: KoreanWord): UserProgress => {
+  let progress = loadProgress();
+  if (!progress) {
+    throw new Error('進捗データが見つかりません');
+  }
+  
+  const { korean } = word;
+  
+  // 単語の統計情報を更新または作成
+  if (progress.wordStats[korean]) {
+    progress.wordStats[korean].incorrectCount += 1;
+  } else {
+    progress.wordStats[korean] = {
+      korean,
+      incorrectCount: 1
+    };
+  }
+  
+  progress.lastUpdated = new Date().toISOString();
+  saveProgress(progress);
+  
+  return progress;
+};
+
+// 単語の間違い回数をリセット
+export const resetWordMistakeCount = (word: KoreanWord): UserProgress => {
+  let progress = loadProgress();
+  if (!progress) {
+    throw new Error('進捗データが見つかりません');
+  }
+  
+  const { korean } = word;
+  
+  // 単語の統計情報をリセット
+  if (progress.wordStats[korean]) {
+    progress.wordStats[korean].incorrectCount = 0;
+  }
+  
+  progress.lastUpdated = new Date().toISOString();
+  saveProgress(progress);
+  
+  return progress;
+};
+
 // 全体の進捗率を計算
 export const calculateOverallProgress = (progress: UserProgress): number => {
   const totalWords = Object.values(progress.categories)
@@ -108,4 +177,16 @@ export const calculateOverallProgress = (progress: UserProgress): number => {
     .reduce((sum, category) => sum + category.correctWords, 0);
     
   return totalWords > 0 ? Math.round((learnedWords / totalWords) * 100) : 0;
+};
+
+// よく間違える単語を取得
+export const getFrequentlyMistaken = (progress: UserProgress, minMistakes: number = 1): string[] => {
+  if (!progress) return [];
+  
+  // 間違い回数が指定回数以上の単語の韓国語のリストを取得
+  const frequentlyMistakenWords = Object.values(progress.wordStats)
+    .filter(stat => stat.incorrectCount >= minMistakes)
+    .map(stat => stat.korean);
+    
+  return frequentlyMistakenWords;
 }; 

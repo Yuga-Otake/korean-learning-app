@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { QuizQuestion, QuizType } from '../types';
 import HangulTable from './HangulTable';
+import { recordWordMistake, resetWordMistakeCount } from '../services/progressService';
 
 interface QuizProps {
   questions: QuizQuestion[];
@@ -33,9 +34,21 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
     
     if (isCorrect) {
       setScore(prevScore => prevScore + 1);
-    } else if (!isReviewMode) {
-      // 通常モードで間違えた問題を記録
-      setIncorrectQuestions(prev => [...prev, currentQuestion]);
+      
+      // レビューモードで正解した場合、間違い回数をリセット
+      if (isReviewMode && currentQuestion.word) {
+        resetWordMistakeCount(currentQuestion.word);
+      }
+    } else {
+      // 間違えた場合、間違い回数を記録
+      if (currentQuestion.word) {
+        recordWordMistake(currentQuestion.word);
+      }
+      
+      if (!isReviewMode) {
+        // 通常モードで間違えた問題を記録
+        setIncorrectQuestions(prev => [...prev, currentQuestion]);
+      }
     }
   };
 
@@ -137,7 +150,7 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
       {isAnswered && (
         <div className="feedback">
           {selectedAnswer === currentQuestion.correctAnswer 
-            ? '正解です！' 
+            ? (isReviewMode ? '正解です！間違い回数がリセットされました。' : '正解です！') 
             : `不正解です。正解は「${currentQuestion.correctAnswer}」です。`}
 
           {/* 追加情報の表示 */}

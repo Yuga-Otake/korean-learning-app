@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { KoreanWord, QuizType, StudyFilter, UserProgress } from './types';
 import { loadVocabulary, generateQuiz, getAvailableCategories, getAvailableLevels, filterVocabulary } from './services/vocabularyService';
-import { initializeProgress, loadProgress, recordWordLearned } from './services/progressService';
+import { initializeProgress, loadProgress, recordWordLearned, getFrequentlyMistaken } from './services/progressService';
 import Quiz from './components/Quiz';
 import ProgressDashboard from './components/ProgressDashboard';
 import StudyFilterComponent from './components/StudyFilter';
@@ -25,67 +25,70 @@ function App() {
   const [showProgress, setShowProgress] = useState(false);
   const [filter, setFilter] = useState<StudyFilter>({
     categories: [],
-    levels: []
+    levels: [],
+    showMistakesOnly: false
   });
+  const [mistakenWords, setMistakenWords] = useState<string[]>([]);
 
-  // 単語データの読み込み
   useEffect(() => {
     const fetchVocabulary = async () => {
       try {
-        const data = await loadVocabulary();
-        setVocabulary(data);
+        setLoading(true);
+        const vocabData = await loadVocabulary();
         
-        // カテゴリとレベルの取得
-        const categories = getAvailableCategories(data);
-        const levels = getAvailableLevels(data);
+        setVocabulary(vocabData);
+        setAvailableCategories(getAvailableCategories(vocabData));
+        setAvailableLevels(getAvailableLevels(vocabData));
         
-        setAvailableCategories(categories);
-        setAvailableLevels(levels);
-        
-        // デフォルトのフィルター設定
-        setFilter({
-          categories: [...categories],
-          levels: [...levels]
-        });
-        
-        // フィルタリング
-        setFilteredVocabulary(data);
-        
-        // 進捗データの初期化
+        // ユーザーの進捗を読み込み、なければ初期化
         let progress = loadProgress();
         if (!progress) {
-          progress = initializeProgress(data);
+          progress = initializeProgress(vocabData);
         }
+        
         setUserProgress(progress);
-      } catch (err) {
-        setError('単語データの読み込みに失敗しました');
-        console.error(err);
-      } finally {
+        
+        // 間違えた問題のリストを取得
+        const mistaken = getFrequentlyMistaken(progress, 1);
+        setMistakenWords(mistaken);
+        
+        setFilteredVocabulary(vocabData);
         setLoading(false);
+      } catch (err) {
+        setError('単語データの読み込みに失敗しました。');
+        setLoading(false);
+        console.error(err);
       }
     };
-
+    
     fetchVocabulary();
   }, []);
-
-  // フィルター変更時に単語をフィルタリング
+  
   useEffect(() => {
     if (vocabulary.length > 0) {
-      const filtered = filterVocabulary(vocabulary, filter);
+      // フィルターに基づいて単語をフィルタリング
+      const filtered = filterVocabulary(vocabulary, filter, mistakenWords);
       setFilteredVocabulary(filtered);
     }
-  }, [filter, vocabulary]);
+  }, [vocabulary, filter, mistakenWords]);
 
-  const handleStartQuiz = (type: QuizType) => {
-    if (filteredVocabulary.length < 4) {
-      setError('フィルターされた単語リストが短すぎます。少なくとも4単語が必要です。');
-      return;
+  const startQuiz = (type: QuizType) => {
+    try {
+      if (filteredVocabulary.length < 4) {
+        setError('選択された単語が少なすぎます。少なくとも4つの単語を選択してください。');
+        return;
+      }
+      
+      const questionCount = Math.min(10, filteredVocabulary.length);
+      const quizQuestions = generateQuiz(filteredVocabulary, type, questionCount);
+      
+      setQuizType(type);
+      setCurrentQuiz(quizQuestions);
+      setQuizCompleted(false);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '問題の作成に失敗しました。');
     }
-    
-    setQuizType(type);
-    setQuizCompleted(false);
-    setCurrentQuiz(generateQuiz(filteredVocabulary, type, 5));
-    setError(null);
   };
 
   const handleQuizComplete = (finalScore: number) => {
@@ -105,6 +108,10 @@ function App() {
           }
         }
       });
+      
+      // 間違えた問題のリストを更新
+      const mistaken = getFrequentlyMistaken(updatedProgress, 1);
+      setMistakenWords(mistaken);
       
       setUserProgress(updatedProgress);
     }
@@ -136,61 +143,93 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h1>韓国語学習アプリ</h1>
+        
+        {!quizType && !showProgress && (
+          <button 
+            className="progress-button"
+            onClick={toggleProgressDisplay}
+          >
+            学習進捗を確認
+          </button>
+        )}
+        
+        {(quizType || showProgress) && (
+          <button 
+            className="back-button"
+            onClick={handleBackToMenu}
+          >
+            メニューに戻る
+          </button>
+        )}
       </header>
-
-      <main>
-        {!quizType ? (
-          <div className="home-screen">
-            <button 
-              className="progress-toggle-button"
-              onClick={toggleProgressDisplay}
-            >
-              {showProgress ? '学習進捗を隠す' : '学習進捗を表示'}
-            </button>
-            
-            {showProgress && userProgress && (
-              <ProgressDashboard progress={userProgress} />
-            )}
-            
+      
+      <main className="App-main">
+        {!quizType && !showProgress && (
+          <div className="menu-container">
             <StudyFilterComponent
               availableCategories={availableCategories}
               availableLevels={availableLevels}
               initialFilter={filter}
               onFilterChange={handleFilterChange}
+              mistakesAvailable={mistakenWords.length > 0}
             />
             
-            <div className="filtered-info">
-              選択された単語: {filteredVocabulary.length}語
+            <div className="filtered-count">
+              選択された単語: {filteredVocabulary.length} / {vocabulary.length}
             </div>
             
-            <div className="menu">
-              <h2>クイズタイプを選択</h2>
-              <button 
-                onClick={() => handleStartQuiz(QuizType.MEANING)}
-                disabled={filteredVocabulary.length < 4}
-              >
-                {QuizType.MEANING}
-              </button>
-              <button 
-                onClick={() => handleStartQuiz(QuizType.READING)}
-                disabled={filteredVocabulary.length < 4}
-              >
-                {QuizType.READING}
-              </button>
+            <div className="quiz-types">
+              <h2>学習を始める</h2>
+              <div className="quiz-buttons">
+                <button
+                  onClick={() => startQuiz(QuizType.MEANING)}
+                  disabled={filteredVocabulary.length < 4}
+                  className="quiz-button"
+                >
+                  意味を学ぶ
+                </button>
+                <button
+                  onClick={() => startQuiz(QuizType.READING)}
+                  disabled={filteredVocabulary.length < 4}
+                  className="quiz-button"
+                >
+                  読み方を学ぶ
+                </button>
+                <button
+                  onClick={() => startQuiz(QuizType.PRONUNCIATION)}
+                  disabled={filteredVocabulary.length < 4}
+                  className="quiz-button"
+                >
+                  発音を学ぶ
+                </button>
+              </div>
             </div>
           </div>
-        ) : quizCompleted ? (
+        )}
+        
+        {quizType && !quizCompleted && (
+          <Quiz
+            questions={currentQuiz}
+            onComplete={handleQuizComplete}
+          />
+        )}
+        
+        {quizType && quizCompleted && (
           <div className="results">
-            <h2>クイズ結果</h2>
-            <p>
-              スコア: {score} / {currentQuiz.length}
-            </p>
+            <h2>学習結果</h2>
+            <p>スコア: {score} / {currentQuiz.length}</p>
             <button onClick={handleBackToMenu}>メニューに戻る</button>
           </div>
-        ) : (
-          <Quiz questions={currentQuiz} onComplete={handleQuizComplete} />
+        )}
+        
+        {showProgress && userProgress && (
+          <ProgressDashboard progress={userProgress} />
         )}
       </main>
+      
+      <footer className="App-footer">
+        <p>韓国語学習アプリ &copy; {new Date().getFullYear()}</p>
+      </footer>
     </div>
   );
 }

@@ -8,7 +8,8 @@ export interface KoreanWord {
 
 export enum QuizType {
   MEANING = '意味クイズ',
-  READING = '読み方クイズ'
+  READING = '読み方クイズ',
+  PRONUNCIATION = '発音クイズ'
 }
 
 export interface QuizQuestion {
@@ -38,13 +39,20 @@ export interface LevelProgress {
   progressPercentage: number;
 }
 
+export interface WordStat {
+  korean: string;
+  incorrectCount: number;
+}
+
 export interface UserProgress {
   categories: Record<string, CategoryProgress>;
   levels: Record<string, LevelProgress>;
+  wordStats: Record<string, WordStat>;
   lastUpdated: string;
 }
 
 export interface StudyFilter {
   categories: string[];
   levels: string[];
+  showMistakesOnly: boolean;
 } 
