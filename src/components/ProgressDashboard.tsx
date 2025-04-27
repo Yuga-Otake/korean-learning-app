@@ -12,9 +12,11 @@ const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ progress }) => {
   
   // カテゴリとレベルの進捗をソート
   const sortedCategories = Object.values(progress.categories)
+    .filter(category => category && category.category) // nullやundefinedのカテゴリを除外
     .sort((a, b) => a.category.localeCompare(b.category));
     
   const sortedLevels = Object.values(progress.levels)
+    .filter(level => level && level.level) // nullやundefinedのレベルを除外
     .sort((a, b) => {
       // レベルを優先度順にソート（初級、中級、上級）
       const levelOrder: Record<string, number> = {
@@ -87,6 +89,11 @@ const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ progress }) => {
 
 // レベルに応じた色を返す関数
 const getLevelColor = (level: string): string => {
+  // レベルがundefinedの場合はデフォルト色を返す
+  if (!level) {
+    return '#2979ff'; // デフォルト青
+  }
+  
   switch (level) {
     case '初級': return '#4caf50'; // 緑
     case '中級': return '#ff9800'; // オレンジ
@@ -97,6 +104,11 @@ const getLevelColor = (level: string): string => {
 
 // カテゴリに応じた色を返す関数
 const getCategoryColor = (category: string): string => {
+  // カテゴリがundefinedの場合はデフォルト色を返す
+  if (!category) {
+    return '#2979ff'; // デフォルト青
+  }
+
   const colors = [
     '#9c27b0', // 紫
     '#e91e63', // ピンク
