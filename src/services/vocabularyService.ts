@@ -77,7 +77,9 @@ export const generatePronunciationQuiz = (
 
   // 利用可能な単語からランダムに問題の数だけ選択
   const shuffledVocab = [...vocabulary].sort(() => 0.5 - Math.random());
-  const selectedWords = shuffledVocab.slice(0, questionCount);
+  // 正解問題は1問だけにする（ユーザーの要望により）
+  const actualQuestionCount = 1;
+  const selectedWords = shuffledVocab.slice(0, actualQuestionCount);
   
   return selectedWords.map(word => {
     // 単語の発音の一部を表示し、残りの部分を選ばせる形式
@@ -124,7 +126,9 @@ export const generateQuiz = (
 
   // 利用可能な単語からランダムに問題の数だけ選択
   const shuffledVocab = [...vocabulary].sort(() => 0.5 - Math.random());
-  const selectedWords = shuffledVocab.slice(0, questionCount);
+  // 正解問題は1問だけにする（ユーザーの要望により）
+  const actualQuestionCount = 1;
+  const selectedWords = shuffledVocab.slice(0, actualQuestionCount);
   
   return selectedWords.map(word => {
     // 各問題で正解以外の選択肢として3つの異なる単語を選択
