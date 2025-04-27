@@ -77,37 +77,76 @@ export const generatePronunciationQuiz = (
 
   // 利用可能な単語からランダムに問題の数だけ選択
   const shuffledVocab = [...vocabulary].sort(() => 0.5 - Math.random());
-  // 正解問題は1問だけにする（ユーザーの要望により）
-  const actualQuestionCount = 1;
-  const selectedWords = shuffledVocab.slice(0, actualQuestionCount);
+  // 問題数を5問に戻す
+  const selectedWords = shuffledVocab.slice(0, questionCount);
   
-  return selectedWords.map(word => {
-    // 単語の発音の一部を表示し、残りの部分を選ばせる形式
-    const question = word.korean;
-    const correctAnswer = word.pronunciation;
+  // ハングルの子音と母音の対応表
+  const hangulComponents = [
+    { character: 'ㄱ', pronunciation: 'k/g' },
+    { character: 'ㄴ', pronunciation: 'n' },
+    { character: 'ㄷ', pronunciation: 't/d' },
+    { character: 'ㄹ', pronunciation: 'r/l' },
+    { character: 'ㅁ', pronunciation: 'm' },
+    { character: 'ㅂ', pronunciation: 'p/b' },
+    { character: 'ㅅ', pronunciation: 's' },
+    { character: 'ㅇ', pronunciation: 'ng' },
+    { character: 'ㅈ', pronunciation: 'j' },
+    { character: 'ㅊ', pronunciation: 'ch' },
+    { character: 'ㅋ', pronunciation: 'k' },
+    { character: 'ㅌ', pronunciation: 't' },
+    { character: 'ㅍ', pronunciation: 'p' },
+    { character: 'ㅎ', pronunciation: 'h' },
+    { character: 'ㅏ', pronunciation: 'a' },
+    { character: 'ㅑ', pronunciation: 'ya' },
+    { character: 'ㅓ', pronunciation: 'eo' },
+    { character: 'ㅕ', pronunciation: 'yeo' },
+    { character: 'ㅗ', pronunciation: 'o' },
+    { character: 'ㅛ', pronunciation: 'yo' },
+    { character: 'ㅜ', pronunciation: 'u' },
+    { character: 'ㅠ', pronunciation: 'yu' },
+    { character: 'ㅡ', pronunciation: 'eu' },
+    { character: 'ㅣ', pronunciation: 'i' }
+  ];
+  
+  // ランダムにハングル部位を選択して問題を作成
+  const questions: QuizQuestion[] = [];
+  
+  for (let i = 0; i < questionCount; i++) {
+    // ランダムにハングル部位を選択
+    const randomIndex = Math.floor(Math.random() * hangulComponents.length);
+    const selectedComponent = hangulComponents[randomIndex];
     
-    // 他の選択肢（発音）を取得
-    const otherOptions = shuffledVocab
-      .filter(w => w !== word && w.pronunciation !== word.pronunciation)
-      .slice(0, 3)
-      .map(w => w.pronunciation);
+    // 正解の発音
+    const correctAnswer = selectedComponent.pronunciation;
+    
+    // 他の選択肢（他のハングル部位の発音）
+    const otherOptions = hangulComponents
+      .filter((comp) => comp.pronunciation !== correctAnswer)
+      .sort(() => 0.5 - Math.random()) // シャッフル
+      .slice(0, 3) // 3つ選ぶ
+      .map(comp => comp.pronunciation);
     
     // 選択肢をランダムに並べ替え
     const options = [correctAnswer, ...otherOptions].sort(() => 0.5 - Math.random());
     
-    return {
-      question,
+    // 関連する単語を選択（表示用）
+    const relatedWord = selectedWords[i % selectedWords.length];
+    
+    questions.push({
+      question: selectedComponent.character, // ハングルの部位を問題とする
       options,
       correctAnswer,
       questionType: QuizType.PRONUNCIATION,
-      word: word,
-      korean: word.korean,
-      japanese: word.japanese,
-      pronunciation: word.pronunciation,
-      category: word.category,
-      level: word.level
-    };
-  });
+      word: relatedWord, // 関連する単語情報を含める
+      korean: relatedWord.korean,
+      japanese: relatedWord.japanese,
+      pronunciation: relatedWord.pronunciation,
+      category: relatedWord.category,
+      level: relatedWord.level
+    });
+  }
+  
+  return questions;
 };
 
 export const generateQuiz = (
@@ -126,9 +165,8 @@ export const generateQuiz = (
 
   // 利用可能な単語からランダムに問題の数だけ選択
   const shuffledVocab = [...vocabulary].sort(() => 0.5 - Math.random());
-  // 正解問題は1問だけにする（ユーザーの要望により）
-  const actualQuestionCount = 1;
-  const selectedWords = shuffledVocab.slice(0, actualQuestionCount);
+  // 問題数を5問に戻す
+  const selectedWords = shuffledVocab.slice(0, questionCount);
   
   return selectedWords.map(word => {
     // 各問題で正解以外の選択肢として3つの異なる単語を選択

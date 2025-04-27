@@ -121,6 +121,7 @@ function App() {
     setQuizType(null);
     setCurrentQuiz([]);
     setQuizCompleted(false);
+    setShowProgress(false);
   };
 
   const handleFilterChange = (newFilter: StudyFilter) => {

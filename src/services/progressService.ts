@@ -79,7 +79,21 @@ export const loadProgress = (): UserProgress | null => {
   if (!progressData) return null;
   
   try {
-    return JSON.parse(progressData) as UserProgress;
+    const progress = JSON.parse(progressData) as UserProgress;
+    
+    // 古いバージョンの進捗データを新しい形式に変換
+    if (!progress.wordStats) {
+      console.log('古い形式の進捗データを検出しました。新しい形式に変換します。');
+      progress.wordStats = {};
+      
+      // カテゴリごとの単語を取得するためにvocabularyをロードする必要があるが、
+      // 非同期関数内で行うことができないため、空のオブジェクトで初期化するだけにする
+      
+      // 変換したデータを保存
+      saveProgress(progress);
+    }
+    
+    return progress;
   } catch (error) {
     console.error('進捗データの読み込みに失敗しました', error);
     return null;
@@ -183,10 +197,24 @@ export const calculateOverallProgress = (progress: UserProgress): number => {
 export const getFrequentlyMistaken = (progress: UserProgress, minMistakes: number = 1): string[] => {
   if (!progress) return [];
   
+  // 古いバージョンの進捗データには wordStats がない場合がある
+  if (!progress.wordStats) return [];
+  
+  // progress.wordStatsがオブジェクトであることを確認
+  if (typeof progress.wordStats !== 'object' || progress.wordStats === null) {
+    console.error('wordStatsがオブジェクトではありません:', progress.wordStats);
+    return [];
+  }
+  
   // 間違い回数が指定回数以上の単語の韓国語のリストを取得
-  const frequentlyMistakenWords = Object.values(progress.wordStats)
-    .filter(stat => stat.incorrectCount >= minMistakes)
-    .map(stat => stat.korean);
+  try {
+    const frequentlyMistakenWords = Object.values(progress.wordStats)
+      .filter(stat => stat && stat.incorrectCount >= minMistakes)
+      .map(stat => stat.korean);
     
-  return frequentlyMistakenWords;
+    return frequentlyMistakenWords;
+  } catch (error) {
+    console.error('よく間違える単語の取得中にエラーが発生しました:', error);
+    return [];
+  }
 }; 
