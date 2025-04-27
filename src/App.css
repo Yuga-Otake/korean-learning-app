@@ -70,9 +70,12 @@ main {
 }
 
 .quiz-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
   font-size: 1rem;
   color: #666;
-  margin-bottom: 10px;
 }
 
 .quiz-type {
@@ -222,4 +225,16 @@ main {
   font-weight: bold;
   color: #555;
   margin-right: 5px;
+}
+
+/* 復習モードのスタイル */
+.review-badge {
+  display: inline-block;
+  background-color: #ff6f00;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-left: 10px;
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QuizQuestion, QuizType } from '../types';
 
 interface QuizProps {
@@ -11,8 +11,15 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
+  const [incorrectQuestions, setIncorrectQuestions] = useState<QuizQuestion[]>([]);
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [reviewQuestionIndex, setReviewQuestionIndex] = useState(0);
+  const [allCompleted, setAllCompleted] = useState(false);
 
-  const currentQuestion = questions[currentQuestionIndex];
+  // 現在表示する問題を決定
+  const currentQuestion = isReviewMode 
+    ? incorrectQuestions[reviewQuestionIndex] 
+    : questions[currentQuestionIndex];
 
   const handleAnswerSelect = (answer: string) => {
     if (isAnswered) return;
@@ -20,8 +27,13 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
     setSelectedAnswer(answer);
     setIsAnswered(true);
     
-    if (answer === currentQuestion.correctAnswer) {
+    const isCorrect = answer === currentQuestion.correctAnswer;
+    
+    if (isCorrect) {
       setScore(prevScore => prevScore + 1);
+    } else if (!isReviewMode) {
+      // 通常モードで間違えた問題を記録
+      setIncorrectQuestions(prev => [...prev, currentQuestion]);
     }
   };
 
@@ -29,10 +41,31 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
     setSelectedAnswer(null);
     setIsAnswered(false);
     
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prevIndex => prevIndex + 1);
+    if (isReviewMode) {
+      // レビューモードの場合
+      if (reviewQuestionIndex < incorrectQuestions.length - 1) {
+        setReviewQuestionIndex(prev => prev + 1);
+      } else {
+        // レビューが終了したら完了状態に
+        setAllCompleted(true);
+        onComplete(score);
+      }
     } else {
-      onComplete(score);
+      // 通常モードの場合
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(prev => prev + 1);
+      } else {
+        // 通常問題が終了
+        if (incorrectQuestions.length > 0) {
+          // 間違えた問題があれば、レビューモードに移行
+          setIsReviewMode(true);
+          setReviewQuestionIndex(0);
+        } else {
+          // 間違いがなければ完了
+          setAllCompleted(true);
+          onComplete(score);
+        }
+      }
     }
   };
 
@@ -43,10 +76,17 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
   // 現在の問題の完全な情報を取得
   const currentWordInfo = currentQuestion as any;
 
+  // 問題数とインデックスの表示を調整
+  const totalQuestions = questions.length;
+  const currentProgress = isReviewMode 
+    ? `復習: ${reviewQuestionIndex + 1}/${incorrectQuestions.length}` 
+    : `質問: ${currentQuestionIndex + 1}/${totalQuestions}`;
+
   return (
     <div className="quiz-container">
       <div className="quiz-progress">
-        質問 {currentQuestionIndex + 1} / {questions.length}
+        {currentProgress}
+        {isReviewMode && <span className="review-badge">間違えた問題を復習中</span>}
       </div>
       
       <div className="quiz-type">
@@ -103,7 +143,10 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
           </div>
 
           <button onClick={handleNextQuestion} className="next-button">
-            {currentQuestionIndex < questions.length - 1 ? '次の質問' : '結果を見る'}
+            {isReviewMode 
+              ? (reviewQuestionIndex < incorrectQuestions.length - 1 ? '次の復習問題' : '結果を見る')
+              : (currentQuestionIndex < questions.length - 1 ? '次の質問' : 
+                 incorrectQuestions.length > 0 ? '間違えた問題を復習する' : '結果を見る')}
           </button>
         </div>
       )}
