@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { KoreanWord, QuizQuestion, QuizType, StudyFilter } from '../types';
+import { KoreanWord, QuizQuestion, QuizType, StudyFilter, UserProgress } from '../types';
 import { getFrequentlyMistaken } from './progressService';
 
 export const loadVocabulary = async (): Promise<KoreanWord[]> => {
@@ -152,7 +152,8 @@ export const generatePronunciationQuiz = (
 export const generateQuiz = (
   vocabulary: KoreanWord[],
   quizType: QuizType,
-  questionCount: number = 5
+  questionCount: number = 5,
+  userProgress?: UserProgress
 ): QuizQuestion[] => {
   if (vocabulary.length < 4) {
     throw new Error('単語リストが短すぎます。少なくとも4単語が必要です。');
@@ -163,14 +164,52 @@ export const generateQuiz = (
     return generatePronunciationQuiz(vocabulary, questionCount);
   }
 
-  // 利用可能な単語からランダムに問題の数だけ選択
-  const shuffledVocab = [...vocabulary].sort(() => 0.5 - Math.random());
-  // 問題数を5問に戻す
-  const selectedWords = shuffledVocab.slice(0, questionCount);
+  // 単語をレベル順にソート（初級→中級→上級）
+  const sortedByLevel = [...vocabulary].sort((a, b) => {
+    const levelOrder: Record<string, number> = {
+      '初級': 1,
+      '中級': 2,
+      '上級': 3
+    };
+    return (levelOrder[a.level] || 99) - (levelOrder[b.level] || 99);
+  });
+
+  // 学習進捗があれば、正解回数の少ない単語を優先
+  let prioritizedWords = sortedByLevel;
+  if (userProgress && userProgress.wordStats) {
+    prioritizedWords = sortedByLevel.sort((a, b) => {
+      // まずレベルでソート
+      const levelOrder: Record<string, number> = {
+        '初級': 1,
+        '中級': 2,
+        '上級': 3
+      };
+      const levelDiff = (levelOrder[a.level] || 99) - (levelOrder[b.level] || 99);
+      if (levelDiff !== 0) return levelDiff;
+      
+      // 次に正解回数でソート（正解数が少ない単語を優先）
+      const statsA = userProgress.wordStats[a.korean];
+      const statsB = userProgress.wordStats[b.korean];
+      
+      // 正解しているかどうかを確認
+      const isLearnedA = userProgress.categories[a.category]?.correctWords > 0;
+      const isLearnedB = userProgress.categories[b.category]?.correctWords > 0;
+      
+      // 学習済みの単語は後ろに
+      if (isLearnedA && !isLearnedB) return 1;
+      if (!isLearnedA && isLearnedB) return -1;
+      
+      // 間違え回数が多い単語を優先
+      return (statsB?.incorrectCount || 0) - (statsA?.incorrectCount || 0);
+    });
+  }
+  
+  // 問題数分の単語を選択
+  const selectedWords = prioritizedWords.slice(0, questionCount);
   
   return selectedWords.map(word => {
     // 各問題で正解以外の選択肢として3つの異なる単語を選択
-    const otherOptions = shuffledVocab
+    const otherOptions = sortedByLevel
       .filter(w => w !== word)
       .slice(0, 3);
     

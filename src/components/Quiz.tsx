@@ -118,8 +118,8 @@ const Quiz: React.FC<QuizProps> = ({ questions, onComplete }) => {
     // 意味クイズ: 「韓国語（読み方）」の形式で表示
     questionText = `${currentQuestion.question} (${currentWordInfo.pronunciation})`;
   } else if (currentQuestion.questionType === QuizType.READING) {
-    // 読み方クイズ: 「韓国語（意味）」の形式で表示
-    questionText = `${currentQuestion.question} (${currentWordInfo.japanese})`;
+    // 読み方クイズ: 韓国語単語のみを表示（意味は表示しない）
+    questionText = `${currentQuestion.question}`;
   } else if (currentQuestion.questionType === QuizType.PRONUNCIATION) {
     // 発音クイズ: ハングル部位をそのまま表示
     questionText = `${currentQuestion.question}`;

@@ -83,7 +83,7 @@ function App() {
       }
       
       const questionCount = Math.min(10, filteredVocabulary.length);
-      const quizQuestions = generateQuiz(filteredVocabulary, type, questionCount);
+      const quizQuestions = generateQuiz(filteredVocabulary, type, questionCount, userProgress || undefined);
       
       setQuizType(type);
       setCurrentQuiz(quizQuestions);
