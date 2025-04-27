@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { KoreanWord, QuizType, StudyFilter, UserProgress } from './types';
 import { loadVocabulary, generateQuiz, getAvailableCategories, getAvailableLevels, filterVocabulary } from './services/vocabularyService';
-import { initializeProgress, loadProgress, recordWordLearned, getFrequentlyMistaken } from './services/progressService';
+import { initializeProgress, loadProgress, recordWordLearned, getFrequentlyMistaken, updateProgressWithVocabulary } from './services/progressService';
 import Quiz from './components/Quiz';
 import ProgressDashboard from './components/ProgressDashboard';
 import StudyFilterComponent from './components/StudyFilter';
@@ -44,6 +44,9 @@ function App() {
         let progress = loadProgress();
         if (!progress) {
           progress = initializeProgress(vocabData);
+        } else {
+          // 既存の進捗データを最新の単語リストで更新
+          progress = updateProgressWithVocabulary(progress, vocabData);
         }
         
         setUserProgress(progress);

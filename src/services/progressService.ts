@@ -68,6 +68,97 @@ export const initializeProgress = (vocabulary: KoreanWord[]): UserProgress => {
   return progress;
 };
 
+// 既存の進捗データを最新の単語リストで更新する
+export const updateProgressWithVocabulary = (progress: UserProgress, vocabulary: KoreanWord[]): UserProgress => {
+  // 単語がない場合はそのまま返す
+  if (!vocabulary || vocabulary.length === 0) return progress;
+  
+  // すべてのカテゴリとレベルを抽出
+  const getUniqueValues = (array: string[]): string[] => {
+    return array.filter((value, index, self) => self.indexOf(value) === index);
+  };
+  
+  const categories = getUniqueValues(vocabulary.map(word => word.category)).sort();
+  const levels = getUniqueValues(vocabulary.map(word => word.level));
+  
+  // レベルの順序を定義
+  const levelOrder: Record<string, number> = {
+    '初級': 1,
+    '中級': 2,
+    '上級': 3
+  };
+  
+  // レベルをソート
+  levels.sort((a, b) => (levelOrder[a] || 99) - (levelOrder[b] || 99));
+  
+  // 新しいカテゴリがあれば追加
+  categories.forEach(category => {
+    if (!progress.categories[category]) {
+      const wordsInCategory = vocabulary.filter(word => word.category === category);
+      progress.categories[category] = {
+        category,
+        totalWords: wordsInCategory.length,
+        correctWords: 0,
+        progressPercentage: 0
+      };
+      console.log(`新しいカテゴリを追加しました: ${category}`);
+    } else {
+      // 既存のカテゴリは単語数を更新
+      const wordsInCategory = vocabulary.filter(word => word.category === category);
+      progress.categories[category].totalWords = wordsInCategory.length;
+      // 正解数が単語数を超えないように調整
+      if (progress.categories[category].correctWords > wordsInCategory.length) {
+        progress.categories[category].correctWords = wordsInCategory.length;
+      }
+      // 進捗率を再計算
+      progress.categories[category].progressPercentage = Math.round(
+        (progress.categories[category].correctWords / wordsInCategory.length) * 100
+      );
+    }
+  });
+  
+  // 新しいレベルがあれば追加
+  levels.forEach(level => {
+    if (!progress.levels[level]) {
+      const wordsInLevel = vocabulary.filter(word => word.level === level);
+      progress.levels[level] = {
+        level,
+        totalWords: wordsInLevel.length,
+        correctWords: 0,
+        progressPercentage: 0
+      };
+      console.log(`新しいレベルを追加しました: ${level}`);
+    } else {
+      // 既存のレベルは単語数を更新
+      const wordsInLevel = vocabulary.filter(word => word.level === level);
+      progress.levels[level].totalWords = wordsInLevel.length;
+      // 正解数が単語数を超えないように調整
+      if (progress.levels[level].correctWords > wordsInLevel.length) {
+        progress.levels[level].correctWords = wordsInLevel.length;
+      }
+      // 進捗率を再計算
+      progress.levels[level].progressPercentage = Math.round(
+        (progress.levels[level].correctWords / wordsInLevel.length) * 100
+      );
+    }
+  });
+  
+  // 単語の統計情報を更新
+  vocabulary.forEach(word => {
+    if (!progress.wordStats[word.korean]) {
+      progress.wordStats[word.korean] = {
+        korean: word.korean,
+        incorrectCount: 0
+      };
+    }
+  });
+  
+  progress.lastUpdated = new Date().toISOString();
+  saveProgress(progress);
+  
+  return progress;
+};
+
 // 進捗を保存する
 export const saveProgress = (progress: UserProgress): void => {
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
